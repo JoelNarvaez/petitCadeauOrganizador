@@ -1,69 +1,84 @@
-const participantes = ["Mariel", "Ana", "Carlos", "Luis", "Sofía", "Juan"];
+// ============================================================
+//  sorteo.js  —  Algoritmo puro del sorteo
+//  Sin DOM, sin localStorage, solo recibe datos y devuelve resultado
+//  Esto permite probarlo fácilmente de forma independiente
+// ============================================================
 
-function iniciarSorteo() {
-  const contenedor = document.getElementById("participantes-container");
-  const caja = document.getElementById("caja");
-  const cajaAbierta = document.getElementById("caja-abierta");
-  const info = document.getElementById("ganador-info");
+// ── Algoritmo principal ──────────────────────────────────────
+// Recibe:
+//   participantes : ["Ana", "Luis", "Gina", "Lalo"]
+//   exclusiones   : { "Gina": ["Angelica"], "Ana": ["Luis"] }
+//
+// Devuelve:
+//   { "Ana": "Lalo", "Luis": "Gina", "Gina": "Luis", "Lalo": "Ana" }
+//   o null si no fue posible encontrar una solución válida
 
-  // Resetear
-  contenedor.innerHTML = "";
-  caja.classList.remove("hidden", "sacudiendo");
-  cajaAbierta.classList.add("hidden");
-  info.textContent = "¡Los nombres están entrando a la caja!";
+function realizarSorteo(participantes, exclusiones) {
+  const MAX_INTENTOS = 200;
 
-  // Animar participantes
-  participantes.forEach((nombre, index) => {
-    const div = document.createElement("div");
-    div.className = "participante";
-    div.textContent = nombre;
-    div.style.position = "absolute";
-    div.style.top = "-50px";
-    div.style.left = `${50 + Math.random() * 30 - 15}%`;
-    div.style.opacity = "1";
-    contenedor.appendChild(div);
-
-    // Animar caída
-    setTimeout(() => {
-      div.style.transition = "top 1.5s ease, opacity 1.5s ease";
-      div.style.top = "calc(100% - 50px)";
-      div.style.opacity = "0";
-    }, index * 300);
-  });
-
-  const tiempoCaida = participantes.length * 300 + 1500;
-
-  // Sacudir la caja
-  setTimeout(() => {
-    caja.classList.add("sacudiendo");
-  }, tiempoCaida);
-
-  // Abrir la caja y mostrar ganador
-  setTimeout(() => {
-    caja.classList.add("hidden");
-    cajaAbierta.classList.remove("hidden");
-    const ganador = participantes[Math.floor(Math.random() * participantes.length)];
-    info.textContent = `🎊 ¡El ganador es ${ganador}! 🎊`;
-    lanzarConfeti();
-  }, tiempoCaida + 1200);
-}
-
-function lanzarConfeti() {
-  const contenedor = document.getElementById("participantes-container");
-  const colores = ["#FF0000","#00FF00","#0000FF","#FFD700","#FF69B4"];
-
-  for (let i = 0; i < 50; i++) {
-    const confeti = document.createElement("div");
-    confeti.className = "confeti-piece";
-    confeti.style.setProperty("--color", colores[Math.floor(Math.random() * colores.length)]);
-    confeti.style.setProperty("--x", (Math.random() * 200 - 100) + "px");
-    confeti.style.left = Math.random() * 100 + "%";
-    contenedor.appendChild(confeti);
-    setTimeout(() => { confeti.remove(); }, 2000);
+  for (let intento = 0; intento < MAX_INTENTOS; intento++) {
+    const resultado = intentarSorteo(participantes, exclusiones);
+    if (resultado) return resultado;
   }
+
+  // Si después de 200 intentos no hay solución, devolver null
+  return null;
 }
 
-function mostrarSorteo() {
-  siguiente('paso-9','paso-11');
-  iniciarSorteo();
+// ── Intento individual de sorteo ─────────────────────────────
+function intentarSorteo(participantes, exclusiones) {
+  // Copiar y mezclar aleatoriamente los receptores
+  const receptores = mezclar([...participantes]);
+
+  const resultado = {};
+
+  for (let i = 0; i < participantes.length; i++) {
+    const dador    = participantes[i];
+    const receptor = receptores[i];
+
+    // Condición 1: nadie se sortea a sí mismo
+    if (dador === receptor) return null;
+
+    // Condición 2: respetar exclusiones
+    const excluidos = exclusiones[dador] || [];
+    if (excluidos.includes(receptor)) return null;
+
+    resultado[dador] = receptor;
+  }
+
+  return resultado;
+}
+
+// ── Mezcla aleatoria (Fisher-Yates) ─────────────────────────
+function mezclar(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// ── Función pública que lee de localStorage y ejecuta ────────
+// Devuelve el resultado del sorteo o null si falló
+function ejecutarSorteo() {
+  const id            = leerEventoActivo();
+  const participantes  = leerCampo(id, "participantes") || [];
+  const exclusiones    = leerCampo(id, "exclusiones")   || {};
+
+  if (participantes.length < 2) {
+    alert("Se necesitan al menos 2 participantes para el sorteo.");
+    return null;
+  }
+
+  const resultado = realizarSorteo(participantes, exclusiones);
+
+  if (!resultado) {
+    alert("No fue posible realizar el sorteo con las exclusiones actuales. Intenta reducir las exclusiones.");
+    return null;
+  }
+
+  // Guardar resultado en localStorage para poder mostrarlo después
+  actualizarCampo(id, "resultadoSorteo", resultado);
+
+  return resultado;
 }
