@@ -18,26 +18,47 @@ function animarSorteo(resultado) {
   cajaAbierta.classList.add("hidden");
   ganadorInfo.textContent     = "¡Los nombres están entrando a la caja!";
 
-  //ANA AGREGA ESTO
+  
   // Limpiar resultados previos si los hay
   const resultadosPrev = document.getElementById("resultados-sorteo");
-  if (resultadosPrev) resultadosPrev.innerHTML = ""; //ANA AGREGA ESTO HASTA AQUÍ
+  if (resultadosPrev) resultadosPrev.innerHTML = ""; 
 
-  // ── Fase 1: Nombres cayendo hacia la caja 
-  participantes.forEach((nombre, index) => {
-    const div       = document.createElement("div");
-    div.className   = "participante absolute text-sm font-bold text-pink-600 bg-white px-2 py-1 rounded shadow";
+
+
+  // ── Fase 1: Nombres cayendo hacia la caja
+participantes.forEach((nombre, index) => {
+  setTimeout(() => {
+    const div = document.createElement("div");
     div.textContent = nombre;
-    div.style.top   = "-50px";
-    div.style.left  = `${30 + Math.random() * 40}%`;
+    div.style.cssText = `
+      position: absolute;
+      top: -40px;
+      left: ${20 + Math.random() * 60}%;
+      transform: translateX(-50%);
+      opacity: 1;
+      z-index: 10;
+      white-space: nowrap;
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: #ec4899;
+      background: white;
+      padding: 3px 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    `;
+
     sorteoContenedor.appendChild(div);
 
-    setTimeout(() => {
-      div.style.transition = "top 1.2s ease, opacity 1.2s ease";
-      div.style.top        = "calc(100% - 40px)";
-      div.style.opacity    = "0";
-    }, index * 300);
-  });
+    // Forzar reflow para que el navegador pinte el estado inicial
+    void div.offsetHeight;
+
+    // Ahora sí aplicar la transición hacia abajo
+    div.style.transition = "top 1.1s ease-in, opacity 0.4s ease 0.7s";
+    div.style.top = "62%";
+    div.style.opacity = "0";
+
+  }, index * 350);
+});
 
   const tiempoCaida = participantes.length * 300 + 1200;
 
@@ -60,32 +81,6 @@ function animarSorteo(resultado) {
 
 
 // ── Mostrar tabla de resultados 
-/*
-function mostrarResultados(resultado) {
-  ganadorInfo.textContent = "¡El sorteo está listo!";
-
-  // Limpiar contenedor*/
-  sorteoContenedor.innerHTML = "";
-
-  // Crear tabla de resultados */
-  /*const tabla = document.createElement("div");
-  tabla.className = "mt-4 w-full";
-
-  Object.entries(resultado).forEach(([dador, receptor]) => {
-    const fila = document.createElement("div");
-    fila.className = "flex items-center justify-between bg-white rounded-xl px-4 py-2 mb-2 shadow text-sm";
-    fila.innerHTML = `
-      <span class="font-semibold text-gray-700">${dador}</span>
-      <span class="text-pink-400 text-lg">🎁</span>
-      <span class="font-semibold text-pink-600">${receptor}</span>
-    `;
-    tabla.appendChild(fila);
-  });
-
-  sorteoContenedor.appendChild(tabla);
-}*/
-
- //ANA AGREGA ESTO
 /* AQUÍ ESTOY AGREGANDO COSAS NUEVAS*/
 function mostrarResultados(resultado) {
   ganadorInfo.textContent = "¡El sorteo está listo!";
@@ -115,7 +110,7 @@ function mostrarResultados(resultado) {
     `;
     tablaContenedor.appendChild(fila);
   });
-}  //ANA TERMINA DE AGREGAR AQUÍ
+} 
 
 // ── Confeti
 function lanzarConfeti() {
